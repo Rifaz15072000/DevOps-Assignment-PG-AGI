@@ -1,0 +1,74 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_CREDENTIALS = "docker-cred"
+        VERSION = "1.0.${BUILD_NUMBER}"
+
+        BACKEND_REPO = "rifaz15072000/backend-fastapi-dev"
+        FRONTEND_REPO = "rifaz15072000/frontend-nodejs-dev"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Rifaz15072000/DevOps-Assignment-PG-AGI.git'
+            }
+        }
+
+        stage('Build & Push Backend Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS) {
+
+                        def backendImage = docker.build("${BACKEND_REPO}:${VERSION}", "backend/")
+                        backendImage.push("${VERSION}")
+                        backendImage.push("latest")
+                    }
+                }
+            }
+        }
+
+        stage('Build & Push Frontend Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS) {
+
+                        def frontendImage = docker.build("${FRONTEND_REPO}:${VERSION}", "frontend/")
+                        frontendImage.push("${VERSION}")
+                        frontendImage.push("latest")
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Backend & Frontend') {
+            steps {
+                sh """
+                docker pull ${BACKEND_REPO}:${VERSION}
+                docker pull ${FRONTEND_REPO}:${VERSION}
+
+                # Stop old containers
+                docker stop backend-app || true
+                docker rm backend-app || true
+                docker stop frontend-app || true
+                docker rm frontend-app || true
+
+                # Run backend
+                docker run -d \
+                  --name backend-app \
+                  -p 8000:8000 \
+                  ${BACKEND_REPO}:${VERSION}
+
+                # Run frontend
+                docker run -d \
+                  --name frontend-app \
+                  -p 3000:3000 \
+                  ${FRONTEND_REPO}:${VERSION}
+                """
+            }
+        }
+    }
+}
+

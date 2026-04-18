@@ -45,6 +45,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+    
 # ✅ REQUIRED HEALTH CHECK (PRIMARY)
 @app.get("/health")
 async def health_check():

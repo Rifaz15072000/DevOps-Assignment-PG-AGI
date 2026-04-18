@@ -13,12 +13,13 @@ pipeline {
         stage('Build Images') {
             steps {
                 script {
-                    bat "docker build -t %BACKEND_IMAGE%:%TAG% backend"
-                    bat "docker build -t %FRONTEND_IMAGE%:%TAG% frontend"
+                    bat """
+                    docker build -t %BACKEND_IMAGE%:%TAG% backend
+                    docker build -t %FRONTEND_IMAGE%:%TAG% frontend
 
-                    // Tag as latest
-                    bat "docker tag %BACKEND_IMAGE%:%TAG% %BACKEND_IMAGE%:latest"
-                    bat "docker tag %FRONTEND_IMAGE%:%TAG% %FRONTEND_IMAGE%:latest"
+                    docker tag %BACKEND_IMAGE%:%TAG% %BACKEND_IMAGE%:latest
+                    docker tag %FRONTEND_IMAGE%:%TAG% %FRONTEND_IMAGE%:latest
+                    """
                 }
             }
         }
@@ -26,15 +27,16 @@ pipeline {
         stage('Push Images') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                    bat '''
-                    echo %PASS% | docker login -u %USER% --password-stdin
-                    '''
+                    
+                    bat """
+                    docker login -u %USER% -p %PASS%
 
-                    bat "docker push %BACKEND_IMAGE%:%TAG%"
-                    bat "docker push %FRONTEND_IMAGE%:%TAG%"
+                    docker push %BACKEND_IMAGE%:%TAG%
+                    docker push %FRONTEND_IMAGE%:%TAG%
 
-                    bat "docker push %BACKEND_IMAGE%:latest"
-                    bat "docker push %FRONTEND_IMAGE%:latest"
+                    docker push %BACKEND_IMAGE%:latest
+                    docker push %FRONTEND_IMAGE%:latest
+                    """
                 }
             }
         }
@@ -54,8 +56,7 @@ pipeline {
             steps {
                 script {
                     timeout(time: 2, unit: 'MINUTES') {
-                        // safer for Windows
-                        bat "powershell -Command Invoke-WebRequest http://localhost/health"
+                        bat "curl -f http://localhost/health"
                     }
                 }
             }
@@ -65,6 +66,15 @@ pipeline {
             steps {
                 bat "docker system prune -f"
             }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Pipeline executed successfully!'
+        }
+        failure {
+            echo '❌ Pipeline failed. Check logs above.'
         }
     }
 }

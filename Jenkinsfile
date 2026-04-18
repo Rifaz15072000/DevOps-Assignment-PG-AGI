@@ -22,7 +22,7 @@ pipeline {
                     bat "docker build -t %BACKEND_IMAGE%:%TAG% backend"
                     bat "docker build -t %FRONTEND_IMAGE%:%TAG% frontend"
 
-                    # Tag as latest also
+                    // Tag as latest also
                     bat "docker tag %BACKEND_IMAGE%:%TAG% %BACKEND_IMAGE%:latest"
                     bat "docker tag %FRONTEND_IMAGE%:%TAG% %FRONTEND_IMAGE%:latest"
                 }

@@ -10,19 +10,13 @@ pipeline {
 
     stages {
 
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/Rifaz15072000/DevOps-Assignment-PG-AGI.git'
-            }
-        }
-
         stage('Build Images') {
             steps {
                 script {
                     bat "docker build -t %BACKEND_IMAGE%:%TAG% backend"
                     bat "docker build -t %FRONTEND_IMAGE%:%TAG% frontend"
 
-                    // Tag as latest also
+                    // Tag as latest
                     bat "docker tag %BACKEND_IMAGE%:%TAG% %BACKEND_IMAGE%:latest"
                     bat "docker tag %FRONTEND_IMAGE%:%TAG% %FRONTEND_IMAGE%:latest"
                 }
@@ -58,7 +52,8 @@ pipeline {
             steps {
                 script {
                     timeout(time: 2, unit: 'MINUTES') {
-                        bat "curl -f http://localhost/health"
+                        // safer for Windows
+                        bat "powershell -Command Invoke-WebRequest http://localhost/health"
                     }
                 }
             }

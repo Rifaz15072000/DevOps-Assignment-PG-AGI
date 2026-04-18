@@ -41,16 +41,20 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
-            steps {
-                bat """
-                docker-compose down
-                docker pull %BACKEND_IMAGE%:latest
-                docker pull %FRONTEND_IMAGE%:latest
-                docker-compose up -d
-                """
-            }
-        }
+stage('Deploy') {
+    steps {
+        bat """
+        docker rm -f backend || exit 0
+        docker rm -f frontend || exit 0
+        docker rm -f nginx || exit 0
+
+        docker-compose down
+        docker pull %BACKEND_IMAGE%:latest
+        docker pull %FRONTEND_IMAGE%:latest
+        docker-compose up -d
+        """
+    }
+}
 
         stage('Health Check') {
             steps {
